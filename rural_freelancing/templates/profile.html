@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}Profile{% endblock %}
+{% block content %}
+<div class="row justify-content-center"><div class="col-md-7"><div class="card"><div class="card-body p-4">
+<h1 class="h4 mb-3">{{ t('prof.title') }}</h1>
+<form method="post" enctype="multipart/form-data">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <div class="row g-3">
+    <div class="col-md-6"><label class="form-label">{{ t('field.name') }}</label><input name="name" class="form-control" value="{{ current_user.name }}" required></div>
+    <div class="col-md-6"><label class="form-label">{{ t('field.phone') }}</label><input name="phone" class="form-control" value="{{ current_user.phone }}" required></div>
+    <div class="col-md-6"><label class="form-label">{{ t('field.village') }}</label><input name="village" class="form-control" value="{{ current_user.village }}"></div>
+    <div class="col-md-6"><label class="form-label">{{ t('nav.language') }}</label>
+      <select name="language" class="form-select">{% for code, n in [('en-IN','English'),('hi-IN','हिन्दी'),('kn-IN','ಕನ್ನಡ'),('ta-IN','தமிழ்'),('te-IN','తెలుగు')] %}
+        <option value="{{ code }}" {{ 'selected' if current_user.language == code }}>{{ n }}</option>{% endfor %}</select></div>
+    <div class="col-md-6"><label class="form-label">{{ t('prof.lat') }}</label><input name="latitude" class="form-control" value="{{ current_user.latitude or '' }}"></div>
+    <div class="col-md-6"><label class="form-label">{{ t('prof.lng') }}</label><input name="longitude" class="form-control" value="{{ current_user.longitude or '' }}"></div>
+    <div class="col-12"><button type="button" class="btn btn-outline-success" onclick="useMyLocation(this)">{{ t('btn.location') }}</button></div>
+    {% if wp %}
+    <div class="col-12"><label class="form-label">{{ t('prof.skills') }}</label><input name="skills" class="form-control" value="{{ wp.skills }}"></div>
+    <div class="col-12"><label class="form-label">{{ t('prof.about') }}</label><textarea name="bio" rows="3" class="form-control">{{ wp.bio or '' }}</textarea></div>
+    <div class="col-md-6"><label class="form-label">{{ t('prof.exp') }}</label><input type="number" min="0" max="60" name="experience_years" class="form-control" value="{{ wp.experience_years }}"></div>
+    <div class="col-md-6"><label class="form-label">{{ t('prof.photo') }}</label><input type="file" name="photo" accept=".png,.jpg,.jpeg" class="form-control"></div>
+    <div class="col-12 form-check ms-2"><input class="form-check-input" type="checkbox" name="available" id="av" {{ 'checked' if wp.available }}><label class="form-check-label" for="av">{{ t('prof.available') }}</label></div>
+    {% endif %}
+  </div>
+  <button class="btn btn-field mt-3">{{ t('btn.save_profile') }}</button>
+</form></div></div></div></div>
+{% endblock %}

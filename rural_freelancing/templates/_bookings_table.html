@@ -1,0 +1,10 @@
+{% if bookings %}
+<div class="table-responsive"><table class="table table-sm align-middle bg-white">
+<thead><tr><th>#</th><th>{{ t('tbl.service') }}</th><th>{{ t('tbl.worker') if current_user.role == 'client' else t('tbl.client') }}</th><th>{{ t('tbl.date') }}</th><th>{{ t('tbl.price') }}</th><th>{{ t('tbl.status') }}</th><th></th></tr></thead>
+<tbody>{% for b in bookings %}<tr>
+  <td>{{ b.id }}</td><td>{{ b.title }}</td><td>{{ b.other_name }}</td><td>{{ b.scheduled_date }}</td>
+  <td>{{ b.agreed_price or b.offered_price }}</td>
+  <td><span class="status status-{{ b.status }}">{{ t('status.' ~ b.status) }}</span></td>
+  <td><a class="btn btn-sm btn-field" href="{{ url_for('booking_detail', bid=b.id) }}">{{ t('dash.open') }}</a></td></tr>{% endfor %}</tbody>
+</table></div>
+{% else %}<p class="text-muted">{{ t('dash.no_bookings') }}</p>{% endif %}

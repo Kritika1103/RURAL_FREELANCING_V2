@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}{{ t('nav.register') }}{% endblock %}
+{% block content %}
+<div class="row justify-content-center"><div class="col-md-6">
+<div class="card"><div class="card-body p-4">
+<h1 class="h4 mb-3">{{ t('register.title') }}</h1>
+<form method="post">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <input type="hidden" name="latitude"><input type="hidden" name="longitude">
+  <div class="mb-3"><label class="form-label">{{ t('reg.role') }}</label>
+    <select name="role" class="form-select" required>
+      <option value="client">{{ t('reg.client') }}</option>
+      <option value="worker">{{ t('reg.worker') }}</option></select></div>
+  <div class="mb-3"><label class="form-label">{{ t('field.name') }}</label><input name="name" class="form-control" required></div>
+  <div class="mb-3"><label class="form-label">{{ t('login.email') }}</label><input type="email" name="email" class="form-control" required></div>
+  <div class="mb-3"><label class="form-label">{{ t('field.phone') }}</label><input name="phone" class="form-control" inputmode="numeric" required></div>
+  <div class="mb-3"><label class="form-label">{{ t('field.village') }}</label><input name="village" class="form-control"></div>
+  <div class="mb-3"><label class="form-label">{{ t('field.password_min') }}</label><input type="password" name="password" class="form-control" required minlength="6"></div>
+  <button type="button" class="btn btn-outline-success mb-3" onclick="useMyLocation(this)">{{ t('btn.location') }}</button>
+  <div><button class="btn btn-field w-100">{{ t('btn.register') }}</button></div>
+</form></div></div></div></div>
+{% endblock %}

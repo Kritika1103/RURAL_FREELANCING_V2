@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block title %}{{ t('nav.login') }}{% endblock %}
+{% block content %}
+<div class="row justify-content-center"><div class="col-md-5">
+<div class="card"><div class="card-body p-4">
+<h1 class="h4 mb-3">{{ t('nav.login') }}</h1>
+<form method="post">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <div class="mb-3"><label class="form-label">{{ t('login.email') }}</label><input type="email" name="email" class="form-control" required></div>
+  <div class="mb-3"><label class="form-label">{{ t('login.password') }}</label><input type="password" name="password" class="form-control" required></div>
+  <button class="btn btn-field w-100">{{ t('nav.login') }}</button>
+</form>
+
+</div></div></div></div>
+{% endblock %}

@@ -1,0 +1,2 @@
+{# Category picture if static/img/categories/<id>.jpg|png|webp exists, otherwise the emoji icon #}
+{% macro cat_visual(c, big=true) %}{% set img = cat_img(c.id) %}{% if img %}<img class="cat-img" src="{{ img }}" alt="">{% else %}<div class="icon {{ '' if big else 'fs-2' }}">{{ c.icon }}</div>{% endif %}{% endmacro %}

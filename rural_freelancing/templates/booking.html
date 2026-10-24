@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% block title %}Booking #{{ b.id }}{% endblock %}
+{% block content %}
+{% set role = current_user.role %}
+<div class="d-flex justify-content-between flex-wrap mb-3">
+  <div><h1 class="h4 mb-1">Booking #{{ b.id }}: {{ b.service_title }}</h1>
+    <p class="mb-0 text-muted">{{ b.client_name }} → {{ b.worker_name }} · {{ b.scheduled_date }} · {{ b.address }}</p></div>
+  <div><span class="status status-{{ b.status }} fs-6">{{ t('status.' ~ b.status) }}</span></div>
+</div>
+{% if b.notes %}<p><strong>{{ t('worker.notes') }}:</strong> {{ b.notes }}</p>{% endif %}
+<div class="row g-4">
+  <div class="col-lg-5">
+    <div class="card mb-3"><div class="card-body">
+      <h2 class="h6">{{ t('book.price') }}</h2>
+      <p class="mb-1">{{ t('book.listed') }}: Rs {{ b.list_price }} {{ b.price_unit }}</p>
+      {% if b.agreed_price %}<p class="mb-0 fw-bold text-success">{{ t('book.agreed') }}: Rs {{ b.agreed_price }}</p>
+      {% else %}<p class="mb-2">{{ t('book.current_offer') }}: Rs {{ b.offered_price }} <small class="text-muted">({{ b.offered_by }})</small></p>
+        {% if can_accept_offer %}<form method="post" action="{{ url_for('accept_offer', bid=b.id) }}" class="mb-2">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-sm btn-field">{{ t('book.accept_price', p=b.offered_price) }}</button></form>{% endif %}{% endif %}
+      {% if can_offer %}<form method="post" action="{{ url_for('make_offer', bid=b.id) }}" class="input-group input-group-sm mt-2">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><span class="input-group-text">Rs</span>
+        <input name="price" type="number" step="0.01" min="1" class="form-control" placeholder="{{ t('book.counter') }}" required><button class="btn btn-paddy">{{ t('book.offer_btn') }}</button></form>{% endif %}
+    </div></div>
+    <div class="card mb-3"><div class="card-body"><h2 class="h6">{{ t('book.actions') }}</h2><div class="d-flex flex-wrap gap-2">
+      {% macro act(action, label, cls) %}<form method="post" action="{{ url_for('booking_status', bid=b.id) }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="action" value="{{ action }}">
+        <button class="btn btn-sm {{ cls }}">{{ label }}</button></form>{% endmacro %}
+      {% if role == 'worker' %}
+        {% if b.status == 'PENDING' %}{{ act('ACCEPTED', t('act.accept'), 'btn-success') }}{{ act('REJECTED', t('act.reject'), 'btn-outline-danger') }}{% endif %}
+        {% if b.status == 'CONFIRMED' %}{{ act('IN_PROGRESS', t('act.start'), 'btn-primary') }}{% endif %}
+        {% if b.status == 'IN_PROGRESS' %}{{ act('COMPLETED', t('act.complete'), 'btn-success') }}{% endif %}
+      {% else %}
+        {% if b.status == 'ACCEPTED' %}{{ act('CONFIRMED', t('act.confirm'), 'btn-field') }}{% endif %}
+        {% if b.status in ['PENDING','ACCEPTED','CONFIRMED'] %}{{ act('CANCELLED', t('act.cancel'), 'btn-outline-danger') }}{% endif %}
+      {% endif %}
+      {% if can_call %}
+      <form method="post" action="{{ url_for('masked_call', bid=b.id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button class="btn btn-sm btn-outline-secondary">{{ t('act.call') }}</button></form>{% endif %}
+    </div></div></div>
+    {% if b.status == 'COMPLETED' and role == 'client' %}
+    <div class="card mb-3"><div class="card-body"><h2 class="h6">{{ t('book.rate') }}</h2>
+      {% if review %}<span class="stars">{{ '★' * review.rating }}{{ '☆' * (5 - review.rating) }}</span><p class="small mb-0">{{ review.comment }}</p>
+      {% else %}<form method="post" action="{{ url_for('review', bid=b.id) }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <select name="rating" class="form-select mb-2" required><option value="">{{ t('book.rating_ph') }}</option>{% for i in [5,4,3,2,1] %}<option value="{{ i }}">{{ '★' * i }} ({{ i }})</option>{% endfor %}</select>
+        <textarea name="comment" rows="2" class="form-control mb-2" placeholder="{{ t('book.review_ph') }}"></textarea><button class="btn btn-paddy">{{ t('book.submit_review') }}</button></form>{% endif %}
+    </div></div>{% elif b.status == 'COMPLETED' and review %}
+    <div class="card mb-3"><div class="card-body"><h2 class="h6">{{ t('book.client_review') }}</h2><span class="stars">{{ '★' * review.rating }}</span><p class="small mb-0">{{ review.comment }}</p></div></div>{% endif %}
+    <div class="card"><div class="card-body"><h2 class="h6">{{ t('cmp.title') }}</h2>
+      {% for c in complaints %}<div class="small border-bottom pb-1 mb-2"><strong>{{ c.subject }}</strong>
+        <span class="badge {{ 'bg-warning text-dark' if c.status == 'OPEN' else 'bg-success' }}">{{ t('cmp.' ~ c.status) }}</span>
+        {% if c.admin_note %}<br><em>{{ c.admin_note }}</em>{% endif %}</div>{% endfor %}
+      <form method="post" action="{{ url_for('file_complaint', bid=b.id) }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input name="subject" maxlength="120" class="form-control form-control-sm mb-2" placeholder="{{ t('cmp.subject') }}" required>
+        <textarea name="body" maxlength="1000" rows="2" class="form-control form-control-sm mb-2" placeholder="{{ t('cmp.details') }}" required></textarea>
+        <button class="btn btn-sm btn-outline-danger">{{ t('cmp.submit') }}</button></form>
+    </div></div>
+  </div>
+  <div class="col-lg-7"><h2 class="h6">{{ t('book.chat') }}</h2>
+    <div id="chatBox" class="chat-box" data-booking="{{ b.id }}" data-last="{{ msgs[-1].id if msgs else 0 }}">
+      {% for m in msgs %}{% if m.sender_id is none %}<div class="msg sys">{{ m.body }}</div>
+      {% else %}<div class="msg {{ 'me' if m.sender_id == current_user.id }}"><small>{{ m.name }} · {{ m.created_at.strftime('%H:%M') }}</small>{{ m.body }}</div>{% endif %}{% endfor %}
+    </div>
+    {% if b.status not in ['REJECTED','CANCELLED'] %}
+    <form id="chatForm" class="input-group mt-2"><input name="body" maxlength="500" class="form-control" placeholder="{{ t('book.type_msg') }}" autocomplete="off"><button class="btn btn-field">{{ t('book.send') }}</button></form>{% endif %}
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}<script src="{{ url_for('static', filename='js/chat.js') }}"></script>{% endblock %}

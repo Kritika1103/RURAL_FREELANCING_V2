@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block title %}{{ t('nav.dashboard') }}{% endblock %}
+{% block content %}
+<div class="d-flex align-items-center gap-3 mb-3">
+  {% if profile.photo %}<img class="avatar" src="{{ url_for('static', filename='uploads/' + profile.photo) }}" alt="">{% else %}<div class="avatar d-flex align-items-center justify-content-center fs-3">👷</div>{% endif %}
+  <div><h1 class="h4 mb-0">{{ current_user.name }}</h1>
+    <span class="stars">{% if rating.n %}★ {{ '%.1f'|format(rating.a) }}{% else %}{{ t('dash.no_ratings') }}{% endif %}</span>
+    <small class="text-muted">({{ rating.n }} {{ t('dash.reviews') }})</small>
+    · <span class="badge {{ 'bg-success' if profile.available else 'bg-secondary' }}">{{ t('dash.available') if profile.available else t('dash.not_available') }}</span>
+    <a class="ms-2 small" href="{{ url_for('profile') }}">{{ t('dash.edit_profile') }}</a></div>
+</div>
+<div class="row g-4">
+  <div class="col-lg-5">
+    <h2 class="h6">{{ t('dash.my_services') }}</h2>
+    {% for s in services %}<div class="card mb-2"><div class="card-body py-2 d-flex justify-content-between align-items-center">
+      <div>{% if s.image %}<img class="avatar me-2" style="width:40px;height:40px" src="{{ url_for('static', filename='uploads/' + s.image) }}" alt="">{% endif %}<strong>{{ s.title }}</strong><br><small class="text-muted">{{ t('cat.' ~ s.category) }} · Rs {{ s.price }} {{ s.price_unit }}</small></div>
+      <form method="post" action="{{ url_for('delete_service', sid=s.id) }}" onsubmit="return confirm('?')">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-sm btn-outline-danger">{{ t('dash.remove') }}</button></form></div></div>
+    {% else %}<p class="text-muted">{{ t('dash.first_service') }}</p>{% endfor %}
+    <div class="card mt-3"><div class="card-body">
+      <h3 class="h6">{{ t('dash.add_service') }}</h3>
+      <form method="post" action="{{ url_for('add_service') }}" enctype="multipart/form-data">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <select name="category_id" class="form-select mb-2" required>{% for c in categories %}<option value="{{ c.id }}">{{ c.icon }} {{ t('cat.' ~ c.name) }}</option>{% endfor %}</select>
+        <input name="title" class="form-control mb-2" placeholder="{{ t('dash.title_ph') }}" required>
+        <textarea name="description" class="form-control mb-2" rows="2" placeholder="{{ t('dash.desc_ph') }}"></textarea>
+        <label class="form-label small">{{ t('dash.photo') }}</label>
+        <input type="file" name="image" accept=".png,.jpg,.jpeg" class="form-control mb-2">
+        <div class="input-group mb-2"><span class="input-group-text">Rs</span><input name="price" type="number" step="0.01" min="1" class="form-control" required>
+          <select name="price_unit" class="form-select"><option>per day</option><option>per hour</option><option>per acre</option><option>per job</option></select></div>
+        <button class="btn btn-field">{{ t('dash.add_service') }}</button></form></div></div>
+    <div class="card mt-3"><div class="card-body">
+      <h3 class="h6">{{ t('avail.title') }}</h3>
+      <form method="post" action="{{ url_for('add_unavailable') }}" class="input-group input-group-sm mb-2">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="date" name="off_date" min="{{ today }}" class="form-control" required>
+        <button class="btn btn-paddy">{{ t('avail.add') }}</button></form>
+      {% for d in off_dates %}<form method="post" action="{{ url_for('delete_unavailable', aid=d.id) }}" class="d-flex justify-content-between align-items-center small border-bottom py-1">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><span>{{ d.off_date }}</span><button class="btn btn-sm btn-outline-secondary py-0">{{ t('dash.remove') }}</button></form>
+      {% else %}<p class="text-muted small mb-0">{{ t('avail.none') }}</p>{% endfor %}
+    </div></div>
+  </div>
+  <div class="col-lg-7"><h2 class="h6">{{ t('dash.requests') }}</h2>{% include "_bookings_table.html" %}</div>
+</div>
+{% endblock %}

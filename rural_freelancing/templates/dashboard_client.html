@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% from "_macros.html" import cat_visual with context %}
+{% block title %}{{ t('nav.dashboard') }}{% endblock %}
+{% block content %}
+<h1 class="h4 mb-3">{{ t('dash.hello') }}, {{ current_user.name }}</h1>
+<h2 class="h6">{{ t('dash.book') }}</h2>
+<div class="row g-2 mb-4">{% for c in categories %}
+  <div class="col-4 col-md-2"><a class="cat-tile" href="{{ url_for('search', category=c.id) }}">{{ cat_visual(c, false) }}<small>{{ t('cat.' ~ c.name) }}</small></a></div>{% endfor %}</div>
+<h2 class="h6">{{ t('dash.my_bookings') }}</h2>
+{% include "_bookings_table.html" %}
+{% endblock %}

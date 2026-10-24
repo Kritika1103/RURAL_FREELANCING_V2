@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% from "_macros.html" import cat_visual with context %}
+{% block title %}{{ t('nav.find') }}{% endblock %}
+{% block content %}
+<div class="row g-2 mb-3">{% for c in categories %}
+  <div class="col-4 col-md-2 col-lg-1"><a class="cat-tile {{ 'active' if category_id == c.id }}" href="{{ url_for('search', category=c.id, lat=lat, lng=lng, radius=radius, date=day or none) }}">{{ cat_visual(c, false) }}<small>{{ t('cat.' ~ c.name) }}</small></a></div>{% endfor %}</div>
+<form method="get" class="card card-body mb-4">
+  <input type="hidden" name="lat" value="{{ lat or '' }}"><input type="hidden" name="lng" value="{{ lng or '' }}">
+  <div class="row g-2 align-items-end">
+    <div class="col-md-3"><label class="form-label small">{{ t('btn.search') }}</label>
+      <div class="input-group"><input id="q" name="q" value="{{ q }}" class="form-control" placeholder="{{ t('search.skill_ph') }}">
+        <button type="button" class="btn btn-paddy" data-target="q" onclick="startVoice(this)">{{ t('btn.speak') }}</button></div></div>
+    <div class="col-6 col-md-2"><label class="form-label small">{{ t('search.voice_lang') }}</label>
+      <select id="voiceLang" class="form-select">{% for code, name in [('en-IN','English'),('hi-IN','हिन्दी'),('kn-IN','ಕನ್ನಡ'),('ta-IN','தமிழ்'),('te-IN','తెలుగు')] %}<option value="{{ code }}" {{ 'selected' if code == voice_code }}>{{ name }}</option>{% endfor %}</select></div>
+    <div class="col-6 col-md-2"><label class="form-label small">{{ t('search.distance') }}</label>
+      <select name="radius" class="form-select"><option value="">{{ t('search.any') }}</option>
+        {% for r in [1,5,10,25] %}<option value="{{ r }}" {{ 'selected' if radius == r }}>{{ t('search.within', n=r) }}</option>{% endfor %}</select></div>
+    <div class="col-6 col-md-2"><label class="form-label small">{{ t('search.max_price') }}</label><input name="max_price" type="number" value="{{ max_price or '' }}" class="form-control"></div>
+    <div class="col-6 col-md-3"><label class="form-label small">{{ t('search.date') }}</label><input name="date" type="date" value="{{ day }}" class="form-control"></div>
+    <input type="hidden" name="category" value="{{ category_id or '' }}">
+    <div class="col-12 d-flex gap-2"><button class="btn btn-field flex-fill">{{ t('btn.search') }}</button>
+      <button type="button" class="btn btn-outline-success flex-fill" data-submit="1" onclick="useMyLocation(this)">{{ t('btn.near') }}</button></div>
+  </div>
+</form>
+{% if lat is none %}<div class="alert alert-info">{{ t('search.hint') }}</div>{% endif %}
+<p class="text-muted">{{ t('search.found', n=results|length) }}</p>
+<div class="row g-3">
+{% for r in results %}
+  <div class="col-md-6 col-lg-4"><div class="card h-100">
+    {% if r.image %}<img class="service-img" src="{{ url_for('static', filename='uploads/' + r.image) }}" alt="{{ r.title }}">{% endif %}
+    <div class="card-body">
+    <div class="d-flex gap-3">
+      {% if r.photo %}<img class="avatar" src="{{ url_for('static', filename='uploads/' + r.photo) }}" alt="">{% else %}<div class="avatar d-flex align-items-center justify-content-center fs-3">{{ r.icon }}</div>{% endif %}
+      <div><h3 class="h6 mb-0">{{ r.title }}</h3><small class="text-muted">{{ r.worker_name }} · {{ r.village }}</small><br>
+        <span class="stars">{% if r.avg_rating %}★ {{ '%.1f'|format(r.avg_rating) }}{% else %}{{ t('card.new') }}{% endif %}</span> <small class="text-muted">({{ r.review_count }})</small></div></div>
+    <p class="small mt-2 mb-1">{{ t('cat.' ~ r.category) }} · {{ r.experience_years }} {{ t('card.yrs') }}</p>
+    <p class="mb-1"><strong>Rs {{ r.price }}</strong> <small>{{ r.price_unit }}</small>
+      {% if r.distance is not none %}<span class="badge bg-success ms-2">{{ r.distance }} {{ t('card.km_away') }}</span>{% endif %}</p>
+  </div>
+  <div class="card-footer bg-white d-flex gap-2">
+    <a class="btn btn-field btn-sm flex-fill" href="{{ url_for('worker_profile', wid=r.worker_id) }}">{{ t('card.view_book') }}</a>
+    <button class="btn btn-outline-secondary btn-sm" type="button" aria-label="Read aloud"
+      onclick="speak('{{ r.title|e }}. {{ r.worker_name|e }}. {{ r.price }} rupees {{ r.price_unit }}.{% if r.distance is not none %} {{ r.distance }} kilometres away.{% endif %}')">🔊</button>
+  </div></div></div>
+{% else %}<div class="col-12"><p class="text-muted">{{ t('search.none') }}</p></div>{% endfor %}
+</div>
+{% endblock %}

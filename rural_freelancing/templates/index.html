@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% from "_macros.html" import cat_visual with context %}
+{% block content %}
+<section class="hero rounded-4 px-3 px-md-5 mb-4">
+  <h1 class="display-6">{{ t('home.title') }}</h1>
+  <p class="lead">{{ t('home.sub') }}</p>
+  <form action="{{ url_for('search') }}" method="get" class="row g-2">
+    <div class="col-md-6"><input id="q" name="q" class="form-control form-control-lg" placeholder="{{ t('home.placeholder') }}" aria-label="{{ t('btn.search') }}"></div>
+    <div class="col-auto">
+      <select id="voiceLang" class="form-select form-select-lg" aria-label="{{ t('search.voice_lang') }}">
+        {% for code, name in [('en-IN','English'),('hi-IN','हिन्दी'),('kn-IN','ಕನ್ನಡ'),('ta-IN','தமிழ்'),('te-IN','తెలుగు')] %}
+        <option value="{{ code }}" {{ 'selected' if code == voice_code }}>{{ name }}</option>{% endfor %}
+      </select></div>
+    <div class="col-auto"><button type="button" class="btn btn-paddy btn-lg" data-target="q" onclick="startVoice(this)">{{ t('btn.speak') }}</button></div>
+    <div class="col-auto"><button class="btn btn-field btn-lg">{{ t('btn.search') }}</button></div>
+  </form>
+</section>
+<h2 class="h5 mb-3">{{ t('home.choose') }}</h2>
+<div class="row g-3">
+  {% for c in categories %}
+  <div class="col-6 col-md-4 col-lg-3">
+    <a class="cat-tile" href="{{ url_for('search', category=c.id) }}">{{ cat_visual(c) }}<div class="fw-semibold mt-2">{{ t('cat.' ~ c.name) }}</div></a>
+  </div>{% endfor %}
+</div>
+{% endblock %}

@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block title %}Admin{% endblock %}
+{% block content %}
+<h1 class="h4 mb-3">Admin panel</h1>
+<div class="row g-2 mb-4">
+  <div class="col-6 col-md-3"><div class="card card-body text-center"><div class="fs-3">{{ counts.get('client', 0) }}</div><small>Clients</small></div></div>
+  <div class="col-6 col-md-3"><div class="card card-body text-center"><div class="fs-3">{{ counts.get('worker', 0) }}</div><small>Workers</small></div></div>
+  <div class="col-6 col-md-3"><div class="card card-body text-center"><div class="fs-3">{{ by_status.values()|sum }}</div><small>Bookings</small></div></div>
+  <div class="col-6 col-md-3"><div class="card card-body text-center"><div class="fs-3">{{ complaints|selectattr('status','equalto','OPEN')|list|length }}</div><small>Open complaints</small></div></div>
+</div>
+
+<h2 class="h5">Complaints</h2>
+<div class="table-responsive mb-4"><table class="table table-sm bg-white align-middle">
+<thead><tr><th>#</th><th>Booking</th><th>From → Against</th><th>Subject / details</th><th>Status</th><th></th></tr></thead><tbody>
+{% for c in complaints %}<tr>
+  <td>{{ c.id }}</td><td>#{{ c.booking_id }}</td><td>{{ c.complainant }} → {{ c.against_name }}</td>
+  <td><strong>{{ c.subject }}</strong><br><small>{{ c.body }}</small>{% if c.admin_note %}<br><em class="small text-success">{{ c.admin_note }}</em>{% endif %}</td>
+  <td><span class="badge {{ 'bg-warning text-dark' if c.status == 'OPEN' else 'bg-success' }}">{{ c.status }}</span></td>
+  <td>{% if c.status == 'OPEN' %}<form method="post" action="{{ url_for('admin_resolve_complaint', cid=c.id) }}" class="d-flex gap-1">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input name="admin_note" maxlength="500" class="form-control form-control-sm" placeholder="Resolution note">
+    <button class="btn btn-sm btn-field">Resolve</button></form>{% endif %}</td></tr>
+{% else %}<tr><td colspan="6" class="text-muted">No complaints.</td></tr>{% endfor %}</tbody></table></div>
+
+<h2 class="h5">Users</h2>
+<div class="table-responsive mb-4"><table class="table table-sm bg-white align-middle">
+<thead><tr><th>#</th><th>Name</th><th>Email</th><th>Role</th><th>Village</th><th>Active</th><th></th></tr></thead><tbody>
+{% for u in users %}<tr><td>{{ u.id }}</td><td>{{ u.name }}</td><td>{{ u.email }}</td><td>{{ u.role }}</td><td>{{ u.village }}</td>
+  <td>{{ 'Yes' if u.is_active else 'No' }}</td>
+  <td>{% if u.role != 'admin' %}<form method="post" action="{{ url_for('admin_toggle_user', uid=u.id) }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <button class="btn btn-sm {{ 'btn-outline-danger' if u.is_active else 'btn-outline-success' }}">{{ 'Deactivate' if u.is_active else 'Re-activate' }}</button></form>{% endif %}</td></tr>{% endfor %}
+</tbody></table></div>
+
+<h2 class="h5">Services</h2>
+<div class="table-responsive mb-4"><table class="table table-sm bg-white align-middle">
+<thead><tr><th>#</th><th>Title</th><th>Category</th><th>Worker</th><th>Price</th><th></th></tr></thead><tbody>
+{% for s in services %}<tr><td>{{ s.id }}</td><td>{{ s.title }}</td><td>{{ s.category }}</td><td>{{ s.worker }}</td><td>Rs {{ s.price }} {{ s.price_unit }}</td>
+  <td><form method="post" action="{{ url_for('admin_delete_service', sid=s.id) }}" onsubmit="return confirm('Remove this service?')">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-sm btn-outline-danger">Remove</button></form></td></tr>{% endfor %}
+</tbody></table></div>
+
+<h2 class="h5">Bookings</h2>
+<div class="table-responsive"><table class="table table-sm bg-white">
+<thead><tr><th>#</th><th>Service</th><th>Client → Worker</th><th>Date</th><th>Price</th><th>Status</th></tr></thead><tbody>
+{% for b in bookings %}<tr><td>{{ b.id }}</td><td>{{ b.title }}</td><td>{{ b.client }} → {{ b.worker }}</td><td>{{ b.scheduled_date }}</td>
+  <td>{{ b.agreed_price or b.offered_price }}</td><td><span class="status status-{{ b.status }}">{{ b.status.replace('_',' ') }}</span></td></tr>{% endfor %}
+</tbody></table></div>
+{% endblock %}
